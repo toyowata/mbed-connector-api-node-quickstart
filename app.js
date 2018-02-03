@@ -14,9 +14,11 @@ var accessKey = process.env.ACCESS_KEY || "ChangeMe";
 var port = process.env.PORT || 8080;
 
 // Paths to resources on the endpoints
-var blinkResourceURI = '/3201/0/5850';
-var blinkPatternResourceURI = '/3201/0/5853';
-var buttonResourceURI = '/3200/0/5501';
+var blinkResourceURI = '/led/0/play';
+var blinkPatternResourceURI = '/led/0/pattern';
+var buttonResourceURI = '/button/0/clicks';
+var accelResourceURI = '/accel/0/xyz';
+var press_temp_ResourceURI = '/press/0/pt';
 
 // Instantiate an mbed Device Connector object
 var mbedConnectorApi = new MbedConnectorApi({
@@ -80,27 +82,51 @@ io.on('connection', function (socket) {
   sockets.push(socket);
 
   socket.on('subscribe-to-presses', function (data) {
-    // Subscribe to all changes of resource /3200/0/5501 (button presses)
+    // Subscribe to all changes of resources
     mbedConnectorApi.putResourceSubscription(data.endpointName, buttonResourceURI, function(error) {
       if (error) throw error;
       socket.emit('subscribed-to-presses', {
         endpointName: data.endpointName
       });
     });
+    mbedConnectorApi.putResourceSubscription(data.endpointName, accelResourceURI, function(error) {
+      if (error) throw error;
+      socket.emit('subscribed-to-accel', {
+        endpointName: data.endpointName
+      });
+    });
+    mbedConnectorApi.putResourceSubscription(data.endpointName, press_temp_ResourceURI, function(error) {
+      if (error) throw error;
+      socket.emit('subscribed-to-press', {
+        endpointName: data.endpointName
+      });
+    });
   });
 
   socket.on('unsubscribe-to-presses', function(data) {
-    // Unsubscribe from the resource /3200/0/5501 (button presses)
+    // Unsubscribe from the resources
     mbedConnectorApi.deleteResourceSubscription(data.endpointName, buttonResourceURI, function(error) {
       if (error) throw error;
       socket.emit('unsubscribed-to-presses', {
         endpointName: data.endpointName
       });
     });
+    mbedConnectorApi.deleteResourceSubscription(data.endpointName, accelResourceURI, function(error) {
+      if (error) throw error;
+      socket.emit('unsubscribed-to-accel', {
+        endpointName: data.endpointName
+      });
+    });
+    mbedConnectorApi.deleteResourceSubscription(data.endpointName, press_temp_ResourceURI, function(error) {
+      if (error) throw error;
+      socket.emit('unsubscribed-to-press', {
+        endpointName: data.endpointName
+      });
+    });
   });
 
   socket.on('get-presses', function(data) {
-    // Read data from GET resource /3200/0/5501 (num button presses)
+    // Read data from GET resources
     mbedConnectorApi.getResourceValue(data.endpointName, buttonResourceURI, function(error, value) {
       if (error) throw error;
       socket.emit('presses', {
@@ -108,6 +134,20 @@ io.on('connection', function (socket) {
         value: value
       });
     });
+    mbedConnectorApi.getResourceValue(data.endpointName, accelResourceURI, function(error, value) {
+      if (error) throw error;
+      socket.emit('accel', {
+        endpointName: data.endpointName,
+        value: value
+      });
+    });
+    mbedConnectorApi.getResourceValue(data.endpointName, press_temp_ResourceURI, function(error, value) {
+        if (error) throw error;
+        socket.emit('pt', {
+          endpointName: data.endpointName,
+          value: value
+        });
+      });
   });
 
   socket.on('update-blink-pattern', function(data) {
@@ -139,6 +179,22 @@ mbedConnectorApi.on('notification', function(notification) {
   if (notification.path === buttonResourceURI) {
     sockets.forEach(function(socket) {
       socket.emit('presses', {
+        endpointName: notification.ep,
+        value: notification.payload
+      });
+    });
+  }
+  if (notification.path === accelResourceURI) {
+    sockets.forEach(function(socket) {
+      socket.emit('accel', {
+        endpointName: notification.ep,
+        value: notification.payload
+      });
+    });
+  }
+  if (notification.path === press_temp_ResourceURI) {
+    sockets.forEach(function(socket) {
+      socket.emit('pt', {
         endpointName: notification.ep,
         value: notification.payload
       });

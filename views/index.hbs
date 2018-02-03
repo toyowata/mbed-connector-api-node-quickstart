@@ -18,13 +18,13 @@
   <body>
     <div class="row margin">
       <div class="small-12 columns">
-        <div><img src="img/ARMmbedLogo.png" alt="ARM mbed"></div>
+        <div><img src="img/arm_mbed.jpg" alt="ARM mbed"></div>
       </div>
     </div>
     <div class="blueband">
       <div class="row">
         <div class="small-12 columns">
-          <h1>Webapp Quickstart</h1>
+          <h1>WebApp クイックスタート</h1>
         </div>
       </div>
     </div>
@@ -32,14 +32,25 @@
     {{#each endpoints}}
       <div class="row" id="{{name}}">
         <div class="small-12 columns">
-          <div class="row">
-            <div class="small-12 columns">
-              <h2>{{name}}</h2>
+          <div class="device_id">
+            <div class="row">
+              <div class="small-12 columns">
+                <h4>Endpoint: {{name}}</h4>
+              </div>
             </div>
           </div>
           <div class="row">
             <div class="small-12 medium-6 columns">
               <h4>Presses: <span class="presses-value">Unknown</span></h4>
+              <h4>
+                X: <span class="accx-value">0</span>
+                Y: <span class="accy-value">0</span>
+                Z: <span class="accz-value">0</span>
+              </h4>
+              <h4>
+                気圧: <span class="p-value">0</span>hPa
+                気温: <span class="t-value">0</span>℃
+              </h4>
               <label><input type="checkbox" class="subscribe-presses"> Subscribe</label>
               <button class="get-presses">GET</button>
             </div>
@@ -70,7 +81,6 @@
       </div>
     {{/each}}
     </div>
-
 
     <script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
     <script type="text/javascript" src="js/socket.io.js"></script>
@@ -120,10 +130,24 @@
           });
         });
 
-
         socket.on('presses', function (data) {
           console.log('presses', data);
           $('#' + data.endpointName + ' .presses-value').html(data.value);
+        });
+
+        socket.on('accel', function (data) {
+          console.log('accel', data);
+		      var xyz_data = data.value.split(",");
+          $('#' + data.endpointName + ' .accx-value').html(xyz_data[0]);
+          $('#' + data.endpointName + ' .accy-value').html(xyz_data[1]);
+          $('#' + data.endpointName + ' .accz-value').html(xyz_data[2]);
+        });
+
+        socket.on('pt', function (data) {
+          console.log('pt', data);
+		      var pt_data = data.value.split(",");
+          $('#' + data.endpointName + ' .p-value').html(pt_data[0]);
+          $('#' + data.endpointName + ' .t-value').html(pt_data[1]);
         });
 
         socket.on('subscribed-to-presses', function (data) {
